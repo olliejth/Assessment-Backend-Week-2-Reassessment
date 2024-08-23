@@ -8,13 +8,7 @@
 --     - Specialty Name
 --     - Performers(list of performer names)
 -- """
-
-SELECT S.specialty_id,
-MAX(S.specialty_name) AS specialty_name,
-ARRAY_AGG(P.performer_stagename) AS performers
-FROM specialty AS S
-JOIN performer AS P
-ON S.specialty_id = P.specialty_id
-
-GROUP BY S.specialty_id
-ORDER BY S.specialty_id
+SELECT venue_id
+FROM venue
+ORDER BY venue_id DESC
+LIMIT 1

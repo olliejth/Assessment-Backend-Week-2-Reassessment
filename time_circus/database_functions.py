@@ -149,21 +149,48 @@ ORDER BY S.specialty_id"""
     return q
 
 
-def get_post_performance_str(json_data: dict) -> str:
-    p_id = json_data["performer_id"]
-    p_date = json_data["performance_date"]
-    venue = json_data["venue_name"]
-    score = json_data["review_score"]
+def get_max_id(connection: connection, table_name: str, col_name: str):
 
-    output_string =
+    cur = connection.cursor()
+    q1 = f"""
+SELECT {col_name}
+FROM {table_name}
+ORDER BY {col_name} DESC
+LIMIT 1"""
 
-    for i in p_id
+    cur.execute(q1)
+
+    new_id_obj = cur.fetchone()
+
+    return new_id_obj[f"{col_name}"]
 
 
-p = """INSERT INTO rating_interaction
-            (event_at, exhibition_id, rating_id)
-        VALUES %s;
+def get_venue_str() -> str:
+    q = """
+    INSERT INTO venue (venue_id, venue_name)
+    VALUES
+    (%s, %s)
+    RETURNING venue_id
+    """
+    return q
+
+
+def get_performance_post_str() -> str:
+    q = """
+    INSERT INTO performance (performance_id, venue_id, performance_date, review_score)
+    VALUES (%s, %s, %s, %s)
+    RETURNING performance_id
     """
 
-extras.execute_values(cur, p, data)
-# # thing that talks to the db, thing with one gap, list of things that can fill the gap
+
+def get_per_pnce_assign_str():
+    ...
+
+
+# p = """INSERT INTO rating_interaction
+#             (event_at, exhibition_id, rating_id)
+#         VALUES %s;
+#     """
+
+# extras.execute_values(cur, p, data)
+# # # thing that talks to the db, thing with one gap, list of things that can fill the gap

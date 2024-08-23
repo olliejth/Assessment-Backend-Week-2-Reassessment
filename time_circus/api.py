@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import Flask, request
 import psycopg2
 from database_functions import get_connection, get_cursor, make_performer_string, is_valid_sort, is_valid_order, get_venues_str
-from database_functions import get_performances_str, get_performance_by_id_str, get_performers_by_specialty_str, get_post_performance_str
+from database_functions import get_performances_str, get_performance_by_id_str, get_performers_by_specialty_str, get_venue_str, get_performance_post_str, get_per_pnce_assign_str, get_max_id
 app = Flask(__name__)
 
 """
@@ -91,8 +91,24 @@ def performances():
         if not isinstance(data["performance_id"], list) or not isinstance(data["performance_date"], str) or not isinstance(data["venue_name"], str) or not isinstance(data["review_score"], int):
             return {"error": True, "message": "One or more data types invalid"}, 400
 
-        query_string = get_post_performance_str(data)
-        # return {success, 201}
+        max_venue_id = get_max_id(conn, 'venue', 'venue_id')
+        max_performance_id = get_max_id(conn, 'performance', 'performance_id')
+        max_ppa_id = get_max_id(
+            conn, 'performance_performer_assignment', 'performance_performer_assignment_id')
+
+        new_venue_id = max_venue_id + 1
+        new_performance_id = max_performance_id + 1
+
+        query_string1 = get_venue_str()
+
+        cur.execute(query_string1, (new_venue_id, data["venue_name"]))
+
+        query_string2 = get_performance_post_str()
+        query_string3 = get_per_pnce_assign_str()
+
+        # conn.commit()
+        # cur.close()
+        # return {success_message, 201}
 
 
 @app.route('/performances/<int:performance_id>', methods=['GET'])
