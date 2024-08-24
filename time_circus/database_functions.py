@@ -102,7 +102,7 @@ ON PPA.performer_id = PR.performer_id
 
 JOIN venue AS V
 ON V.venue_id = PE.venue_id
-ORDER BY PE.performance_id"""
+ORDER BY performance_date DESC"""
 
     return q
 
@@ -183,8 +183,64 @@ def get_performance_post_str() -> str:
     """
 
 
-def get_per_pnce_assign_str():
-    ...
+def get_venue_mapping(connection):
+
+    cur = connection.cursor()
+
+    q = """SELECT * FROM venue"""
+
+    cur.execute(q)
+
+    venue_table_list = cur.fetchall()
+
+    venue_mapping_dict = {}
+    for v in venue_table_list:
+        venue_mapping_dict[v["venue_name"]] = v["venue_id"]
+
+    return venue_mapping_dict
+
+
+def add_new_venue(connection, venue_id, venue_name):
+    q = """
+INSERT INTO venue (venue_id, venue_name)
+VALUES (%s, %s)"""
+
+    cur = connection.cursor()
+    cur.execute(q, (venue_id, venue_name))
+    connection.commit()
+
+
+def add_new_performance(connection, perf_id, perf_date, venue_id, score):
+    q = """
+INSERT INTO performance
+(performance_id, venue_id, performance_date, review_score)
+VALUES
+(%s, %s, %s, %s)"""
+
+    cur = connection.cursor()
+    cur.execute(q, (perf_id, venue_id, perf_date, score))
+    connection.commit()
+
+
+def add_new_ppa_assignments(connection, ppa_id, performer_ids, performance_id):
+    ppa_list = []
+    for performer_id in performer_ids:
+        ppa_list.append([ppa_id, performer_id, performance_id])
+        ppa_id += 1
+
+    q = """
+INSERT INTO performance_performer_assignment
+(performance_performer_assignment_id, performer_id, performance_id)
+VALUES %s"""
+
+    cur = connection.cursor()
+    extras.execute_values(cur, q, ppa_list)
+    connection.commit()
+    cur.close()
+
+
+# def get_per_pnce_assign_str():
+#     ...
 
 
 # p = """INSERT INTO rating_interaction

@@ -9,8 +9,8 @@ TODO: TOCHAR() -> strptime?
 from datetime import datetime
 from flask import Flask, request
 import psycopg2
-from database_functions import get_connection, get_cursor, make_performer_string, is_valid_sort, is_valid_order, get_venues_str
-from database_functions import get_performances_str, get_performance_by_id_str, get_performers_by_specialty_str, get_venue_str, get_performance_post_str, get_per_pnce_assign_str, get_max_id
+from database_functions import get_connection, get_cursor, make_performer_string, is_valid_sort, is_valid_order, get_venues_str, add_new_venue, add_new_performance
+from database_functions import get_performances_str, get_performance_by_id_str, get_performers_by_specialty_str, get_max_id, get_venue_mapping, add_new_ppa_assignments
 app = Flask(__name__)
 
 """
@@ -79,36 +79,58 @@ def performances():
 
         return performances_result, 200
 
-    elif request.method == ['POST']:
+    elif request.method == 'POST':
         data = request.json
 
-        if not "performer_id" or not "performance_date" or not "venue_name" or not "review_score" not in data:
+        if not "performer_id" in data or not "performance_date" in data or not "venue_name" in data or not "review_score" in data.keys():
             return {"error": True, "message": "Invalid data provided."}, 400
 
         if len(data.keys()) > 4:
-            return {"error": True, "message": "Invalid data provided."}, 400
+            return {"error": True, "message": "Invalid data provided1."}, 400
 
-        if not isinstance(data["performance_id"], list) or not isinstance(data["performance_date"], str) or not isinstance(data["venue_name"], str) or not isinstance(data["review_score"], int):
+        performer_id = data["performer_id"]
+        performance_date = data["performance_date"]
+        venue_name = data["venue_name"]
+        review_score = data["review_score"]
+
+        if not all((isinstance(performer_id, list),
+                    isinstance(performance_date, str),
+                    isinstance(venue_name, str),
+                    isinstance(review_score, int))):
             return {"error": True, "message": "One or more data types invalid"}, 400
 
-        max_venue_id = get_max_id(conn, 'venue', 'venue_id')
         max_performance_id = get_max_id(conn, 'performance', 'performance_id')
-        max_ppa_id = get_max_id(
-            conn, 'performance_performer_assignment', 'performance_performer_assignment_id')
+        max_ppa_id = get_max_id(conn,
+                                'performance_performer_assignment',
+                                'performance_performer_assignment_id')
 
-        new_venue_id = max_venue_id + 1
         new_performance_id = max_performance_id + 1
+        new_ppa_id = max_ppa_id + 1
 
-        query_string1 = get_venue_str()
+        venue_mapping = get_venue_mapping(conn)
+        if venue_mapping.get(venue_name):
+            new_venue_id = venue_mapping[venue_name]
+        else:
+            max_venue_id = get_max_id(conn, 'venue', 'venue_id')
+            new_venue_id = max_venue_id + 1
+            add_new_venue(conn, new_venue_id, venue_name)
 
-        cur.execute(query_string1, (new_venue_id, data["venue_name"]))
+        add_new_performance(conn, new_performance_id,
+                            performance_date, new_venue_id, review_score)
 
-        query_string2 = get_performance_post_str()
-        query_string3 = get_per_pnce_assign_str()
+        add_new_ppa_assignments(
+            conn, new_ppa_id, performer_id, new_performance_id)
 
-        # conn.commit()
-        # cur.close()
-        # return {success_message, 201}
+        conn.commit()
+
+        result_dict = {
+            "performance_id": new_performance_id,
+            "venue_id": new_venue_id,
+            "performance_date": performance_date,
+            "review_score": review_score
+        }
+
+        return {"message": f'New performance added: {result_dict}'}, 201
 
 
 @app.route('/performances/<int:performance_id>', methods=['GET'])
@@ -147,6 +169,7 @@ def performers_summary():
 
 
 if __name__ == "__main__":
+
     try:
         app.config["DEBUG"] = True
         app.config["TESTING"] = True
@@ -154,3 +177,5 @@ if __name__ == "__main__":
     finally:
         conn.close()
         print("Connection closed")
+
+    # conn.close()

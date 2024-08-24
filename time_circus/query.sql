@@ -1,14 +1,19 @@
--- """
---     A poorly made, inefficient API route method
+-- SELECT PE.performance_id, 
+-- PR.performer_stagename AS performer_name, 
+-- TO_CHAR(PE.performance_date, 'YYYY-MM-DD') AS performance_date, 
+-- V.venue_name, 
+-- PE.review_score AS score
+-- FROM performance_performer_assignment AS PPA
 
---     A GET request to the /performers_by_specialty endpoint should return a list of specialties
---     each with the performers in that specialty.
---     Each specialty should contain the following information:
---     - Specialty ID
---     - Specialty Name
---     - Performers(list of performer names)
--- """
-SELECT venue_id
-FROM venue
-ORDER BY venue_id DESC
-LIMIT 1
+-- JOIN performance AS PE
+-- ON PPA.performance_id = PE.performance_id
+
+-- JOIN performer AS PR
+-- ON PPA.performer_id = PR.performer_id
+
+-- JOIN venue AS V
+-- ON V.venue_id = PE.venue_id
+-- ORDER BY performance_date DESC
+
+SELECT * FROM performance
+ORDER BY performance_date
