@@ -9,7 +9,7 @@ TODO: TOCHAR() -> strptime?
 from datetime import datetime
 from flask import Flask, request
 import psycopg2
-from database_functions import get_connection, get_cursor, make_performer_string, is_valid_sort, is_valid_order, get_venues_str, add_new_venue, add_new_performance
+from database_functions import get_connection, get_cursor, make_performer_string, is_valid_sort, is_valid_order, get_venues_str, add_new_venue, add_new_performance, get_average_performer_scores
 from database_functions import get_performances_str, get_performance_by_id_str, get_performers_by_specialty_str, get_max_id, get_venue_mapping, add_new_ppa_assignments
 app = Flask(__name__)
 
@@ -111,9 +111,11 @@ def performances():
         if venue_mapping.get(venue_name):
             new_venue_id = venue_mapping[venue_name]
         else:
-            max_venue_id = get_max_id(conn, 'venue', 'venue_id')
-            new_venue_id = max_venue_id + 1
-            add_new_venue(conn, new_venue_id, venue_name)
+            return {"error": True, "message": "Invalid venue name."}, 404
+            # CODE TO ADD NEW VENUE NAME
+            # max_venue_id = get_max_id(conn, 'venue', 'venue_id')
+            # new_venue_id = max_venue_id + 1
+            # add_new_venue(conn, new_venue_id, venue_name)
 
         add_new_performance(conn, new_performance_id,
                             performance_date, new_venue_id, review_score)
@@ -130,7 +132,7 @@ def performances():
             "review_score": review_score
         }
 
-        return {"message": f'New performance added: {result_dict}'}, 201
+        return {"message": f'New performance added: {result_dict}'}, 200
 
 
 @app.route('/performances/<int:performance_id>', methods=['GET'])
@@ -165,7 +167,10 @@ def performer_specialty():
 
 @app.route('/performers/summary', methods=['GET'])
 def performers_summary():
-    pass
+
+    output_list = get_average_performer_scores(conn)
+
+    return output_list, 200
 
 
 if __name__ == "__main__":

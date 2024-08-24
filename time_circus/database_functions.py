@@ -239,14 +239,26 @@ VALUES %s"""
     cur.close()
 
 
-# def get_per_pnce_assign_str():
-#     ...
+def get_average_performer_scores(connection):
 
+    cur = connection.cursor()
+    q = """
+SELECT PR.performer_id AS performer_id,
+MAX(PR.performer_stagename) AS performer_stagename, 
+COUNT(*) AS total_performances, 
+ROUND(AVG(PE.review_score), 1) AS average_review_score
+FROM performer AS PR
 
-# p = """INSERT INTO rating_interaction
-#             (event_at, exhibition_id, rating_id)
-#         VALUES %s;
-#     """
+JOIN performance_performer_assignment AS PPA
+ON PR.performer_id = PPA.performer_id
 
-# extras.execute_values(cur, p, data)
-# # # thing that talks to the db, thing with one gap, list of things that can fill the gap
+JOIN performance AS PE
+ON PPA.performance_id = PE.performance_id
+
+GROUP BY PR.performer_id
+ORDER BY total_performances DESC"""
+
+    cur.execute(q)
+    output_list = cur.fetchall()
+    cur.close()
+    return output_list
