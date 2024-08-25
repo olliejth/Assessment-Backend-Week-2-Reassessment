@@ -1,4 +1,7 @@
-""""""
+"""Functions for the time_circus API routes."""
+
+# pylint: disable=W0621
+
 import logging
 from datetime import datetime
 
@@ -8,6 +11,7 @@ from psycopg2.extras import RealDictCursor
 
 
 def get_connection(dbname, password="postgres") -> connection:
+    """Creates database connection."""
     return connect(
         dbname=dbname,
         host="localhost",
@@ -17,6 +21,7 @@ def get_connection(dbname, password="postgres") -> connection:
 
 
 def get_cursor(connection: connection) -> cursor:
+    """Creates connection cursor."""
     return connection.cursor()
 
 
@@ -25,37 +30,34 @@ def get_logger() -> logging.Logger:
     return logging.getLogger("museum_logger_week7")
 
 
-def configure_logging():
+def configure_logging(destination_file_name) -> None:
     """Configures logging objects."""
-    logging.basicConfig(encoding='utf-8', level=logging.INFO)
+    logging.basicConfig(filename=destination_file_name,
+                        encoding='utf-8', level=logging.INFO)
 
 
 def log_message(logger: logging.Logger, message: str):
     """Filters and formats logging messages."""
     message = f' [{datetime.now()}] -> {message}'
-    level = level.lower()
-    match level:
-        case "info":
-            logger.info(message)
-        case "warning":
-            logger.warning(message)
-        case "debug":
-            logger.debug(message)
+    logger.info(message)
 
 
 def is_valid_sort(sort_param: str) -> bool:
+    """Checks that provided sort parameter is valid."""
     if sort_param.lower() not in ('birth_year', 'specialty_name', 'performer_name'):
         return False
     return True
 
 
 def is_valid_order(order_param: str) -> bool:
+    """Checks that provided order parameter is valid."""
     if order_param.lower() not in ('ascending', 'descending'):
         return False
     return True
 
 
 def make_performer_string(sort: str, order: str) -> list[dict]:
+    """Creates the query string for the performer route."""
 
     q = """
 SELECT P.performer_id AS performer_id, 
@@ -77,6 +79,7 @@ ON S.specialty_id = P.specialty_id"""
 
 
 def get_venues_str() -> str:
+    """Creates the query string for the venues route."""
 
     q = """
 SELECT venue_id, venue_name
@@ -86,6 +89,8 @@ FROM venue
 
 
 def get_performances_str() -> str:
+    """Creates the query string for the performances route."""
+
     q = """
 SELECT PE.performance_id, 
 PR.performer_stagename AS performer_name, 
@@ -108,6 +113,7 @@ ORDER BY performance_date DESC"""
 
 
 def get_performance_by_id_str() -> str:
+    """Creates the query string for the performance by ID route."""
 
     q = """
 SELECT PE.performance_id, 
@@ -134,6 +140,7 @@ ORDER BY PE.performance_id"""
 
 
 def get_performers_by_specialty_str() -> str:
+    """Creates the query string for the performers by specialty route."""
 
     q = """
 SELECT S.specialty_id,
@@ -149,7 +156,8 @@ ORDER BY S.specialty_id"""
     return q
 
 
-def get_max_id(connection: connection, table_name: str, col_name: str):
+def get_max_id(connection: connection, table_name: str, col_name: str) -> int:
+    """Obtains and returns max ID from existing table"""
 
     cur = connection.cursor()
     q1 = f"""
@@ -162,10 +170,14 @@ LIMIT 1"""
 
     new_id_obj = cur.fetchone()
 
+    cur.close()
+
     return new_id_obj[f"{col_name}"]
 
 
 def get_venue_str() -> str:
+    """Creates the query string for the venue route."""
+
     q = """
     INSERT INTO venue (venue_id, venue_name)
     VALUES
@@ -175,15 +187,8 @@ def get_venue_str() -> str:
     return q
 
 
-def get_performance_post_str() -> str:
-    q = """
-    INSERT INTO performance (performance_id, venue_id, performance_date, review_score)
-    VALUES (%s, %s, %s, %s)
-    RETURNING performance_id
-    """
-
-
-def get_venue_mapping(connection):
+def get_venue_mapping(connection: connection) -> dict:
+    """Creates venue mapping dictionary of valid venue names/IDs."""
 
     cur = connection.cursor()
 
@@ -197,10 +202,14 @@ def get_venue_mapping(connection):
     for v in venue_table_list:
         venue_mapping_dict[v["venue_name"]] = v["venue_id"]
 
+    cur.close()
+
     return venue_mapping_dict
 
 
-def add_new_venue(connection, venue_id, venue_name):
+def add_new_venue(connection: connection, venue_id: int, venue_name: str) -> None:
+    """Adds new venue entity to the database."""
+
     q = """
 INSERT INTO venue (venue_id, venue_name)
 VALUES (%s, %s)"""
@@ -208,9 +217,14 @@ VALUES (%s, %s)"""
     cur = connection.cursor()
     cur.execute(q, (venue_id, venue_name))
     connection.commit()
+    cur.close()
 
 
-def add_new_performance(connection, perf_id, perf_date, venue_id, score):
+def add_new_performance(connection: connection, perf_id: int,
+                        perf_date: str, venue_id: int,
+                        score: int) -> None:
+    """Adds a new performance entity to the performance table."""
+
     q = """
 INSERT INTO performance
 (performance_id, venue_id, performance_date, review_score)
@@ -220,9 +234,14 @@ VALUES
     cur = connection.cursor()
     cur.execute(q, (perf_id, venue_id, perf_date, score))
     connection.commit()
+    cur.close()
 
 
-def add_new_ppa_assignments(connection, ppa_id, performer_ids, performance_id):
+def add_new_ppa_assignments(connection: connection, ppa_id: int,
+                            performer_ids: list[int],
+                            performance_id: int) -> None:
+    """Creates the query string for the performer route."""
+
     ppa_list = []
     for performer_id in performer_ids:
         ppa_list.append([ppa_id, performer_id, performance_id])
@@ -239,7 +258,8 @@ VALUES %s"""
     cur.close()
 
 
-def get_average_performer_scores(connection):
+def get_average_performer_scores(connection: connection) -> list[dict]:
+    """Gets number of performances and average review scores per performer."""
 
     cur = connection.cursor()
     q = """
