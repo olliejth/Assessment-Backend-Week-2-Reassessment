@@ -1,4 +1,4 @@
-"""An API for a time travelling circus troop"""
+"""An API for a time traveling circus troop"""
 
 from datetime import datetime
 
