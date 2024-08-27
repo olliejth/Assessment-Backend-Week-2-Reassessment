@@ -44,7 +44,7 @@ def log_message(logger: logging.Logger, message: str):
 
 def is_valid_sort(sort_param: str) -> bool:
     """Checks that provided sort parameter is valid."""
-    if sort_param.lower() not in ('birth_year', 'specialty_name', 'performer_name'):
+    if sort_param.lower() not in ('birth_year', 'specialty', 'performer_name'):
         return False
     return True
 

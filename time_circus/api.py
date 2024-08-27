@@ -1,6 +1,9 @@
 """An API for a time travelling circus troop"""
 
+from datetime import datetime
+
 from flask import Flask, request
+import psycopg2
 
 import database_functions as f
 
@@ -41,9 +44,12 @@ def performers():
         order = 'descending'
 
     if not f.is_valid_sort(sort):
-        return {'error': True, "message": f'{sort} is an invalid sort parameter.'}
+        return {'error': True, "message": f"'{sort}' is an invalid sort parameter."}
     if not f.is_valid_order(order):
-        return {"error": True, "message": f'{order} is an invalid order parameter.'}
+        return {"error": True, "message": f"'{order}' is an invalid order parameter."}
+
+    if sort == "specialty":
+        sort = "specialty_name"
 
     query_str = f.make_performer_string(sort, order)
 
@@ -95,10 +101,10 @@ def performances():
                          "venue_name", "review_score")
         for k in required_keys:
             if k not in data.keys():
-                return {"error": True, "message": "Invalid data provided1."}, 400
+                return {"error": True, "message": "Invalid data provided. (ID: 1)"}, 400
 
         if len(data.keys()) > len(required_keys):
-            return {"error": True, "message": "Invalid data provided2."}, 400
+            return {"error": True, "message": "Invalid data provided. (ID: 2)"}, 400
 
         performer_id = data["performer_id"]
         performance_date = data["performance_date"]
@@ -193,7 +199,6 @@ def performers_summary():
 
 
 if __name__ == "__main__":
-
     try:
         app.config["DEBUG"] = True
         app.config["TESTING"] = True
